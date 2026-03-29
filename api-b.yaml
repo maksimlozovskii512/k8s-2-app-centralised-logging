@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-b
+  template:
+    metadata:
+      labels:
+        app: api-b
+    spec:
+      containers:
+        - name: api-b
+          image: api-b:1.0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: API_A_URL
+              value: "http://api-a"
+          command: ["uvicorn"]
+          args: ["app:app", "--host", "0.0.0.0", "--port", "8000"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-b
+spec:
+  selector:
+    app: api-b
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP
