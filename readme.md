@@ -33,7 +33,7 @@ minikube image ls
 ```
 
 ```bash
-# apply deplyments and services
+# apply deployments and services
 kubectl apply -f api-a.yaml
 kubectl apply -f api-b.yaml
 ```
@@ -43,11 +43,6 @@ kubectl apply -f api-b.yaml
 kubectl get deployments
 kubectl get pods
 kubectl get rs
-```
-
-```bash
-# verify pods and services
-kubectl get pods
 kubectl get svc
 ```
 
@@ -93,4 +88,53 @@ curl http://localhost:8081/
 #         "message":"hello from A"
 #     }
 # }
+```
+
+# Add centralised logging to this setup
+
+```bash
+# add grafana helm repo
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+```
+
+```bash
+# create namespace
+kubectl create namespace logging
+```
+
+```bash
+# install loki stack
+helm install loki grafana/loki-stack \
+  -n logging \
+  --set promtail.enabled=true \
+  --set grafana.enabled=true
+```
+
+```bash
+# verify stack
+kubectl get pods -n logging
+kubectl get svc -n logging
+```
+
+```bash
+# access grafana
+kubectl port-forward -n logging svc/loki-grafana 3000:80
+go to localhost:3000
+```
+
+```bash
+# get admin password
+username: admin
+kubectl get secret -n logging loki-grafana -o jsonpath="{.data.admin-password}" | base64 -d
+```
+
+```bash
+# if loki is not configured in grafana
+add new datasource, http://loki.logging.svc.cluster.local:3100
+```
+
+```bash
+# validate
+in Explore, use "code" query, {app=~".+"}, {app=~"app-a"}, {app=~"app-b"}
 ```
